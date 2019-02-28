@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+   <a href="/add_post">Добавить объявление</a>
+    {% for item in posts %}
+    <div class="alert alert-dark" role="alert">
+        <h2>{{item['title']}}</h2>
+        <p>{{item['content']}}</p>
+        <a href="/post/{{item['id']}}">Подробнее</a>
+    </div>
+{% endfor %}
+{% endblock %}
