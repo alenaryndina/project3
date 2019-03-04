@@ -40,7 +40,7 @@ class UserModel:
 
     def get(self, user_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (str(user_id)))
+        cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
         row = cursor.fetchone()
         return row
 
@@ -82,7 +82,7 @@ class NewsModel:
 
     def get(self, news_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM news WHERE id = ?", (str(news_id)))
+        cursor.execute("SELECT * FROM news WHERE id = "+ (str(news_id)))
         row = cursor.fetchone()
         return row
 
@@ -119,16 +119,17 @@ class PostModel:
                                    floor VARCHAR(10),
                                    type_post VARCHAR(1),
                                    address VARCHAR(1000),
+                                   contact VARCHAR(100),
                                    views VARCHAR(100)
                                    )''')
         cursor.close()
         self.connection.commit()
 
-    def insert(self, title, content, user_id,image,cost,rooms,floor,type_post,address,views):
+    def insert(self, title, content, user_id,image,cost,rooms,floor,type_post,address,contact, views):
         cursor = self.connection.cursor()
         cursor.execute('''INSERT INTO posts 
-                            (title, content, user_id,image,cost,rooms,floor,type_post,address,views) 
-                            VALUES (?,?,?,?,?,?,?,?,?,?)''', (title, content, str(user_id),image, cost, rooms,floor, type_post, address, views))
+                            (title, content, user_id,image,cost,rooms,floor,type_post,address,contact,views) 
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?)''', (title, content, str(user_id),image, cost, rooms,floor, type_post, address,contact, views))
         cursor.close()
         self.connection.commit()
 
@@ -153,6 +154,14 @@ class PostModel:
         cursor.close()
         self.connection.commit()
 
+    def add_view(self, posts_id):
+        data = self.get(posts_id)
+        cursor = self.connection.cursor()
+        cursor.execute(''' UPDATE posts SET views ='''+str(int(data[11])+1) + ''' WHERE id = ''' + str(posts_id))
+        cursor.close()
+        self.connection.commit()
+
+
 
 db = DB()
 user_model = UserModel(db.get_connection())
@@ -160,7 +169,7 @@ post_model = PostModel(db.get_connection())
 user_model.init_table()
 post_model.init_table()
 
-from flask import Flask, redirect, render_template
+from flask import Flask, redirect, render_template, session
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, RadioField
 from wtforms.validators import DataRequired, EqualTo
@@ -190,6 +199,7 @@ class AddPost(FlaskForm):
     rooms = TextAreaField('Количество комнат ', validators=[DataRequired()])
     floor = TextAreaField('Этаж', validators=[DataRequired()])
     address = TextAreaField('Адрес ', validators=[DataRequired()])
+    contact = TextAreaField('Номер телефона ', validators=[DataRequired()])
     cost = TextAreaField('Цена ', validators=[DataRequired()])
     submit = SubmitField('Добавить')
 
@@ -226,9 +236,24 @@ def login():
     form = LoginForm()
     user_status, user_id = user_model.exists(form.login.data, form.password.data)
 
+
+
     if form.validate_on_submit() and user_status:
+        print(user_status, user_id )
+        session["username"] = form.login.data
+        print(user_model.get(user_id))
+        if user_model.get(user_id)[4] == 1:
+            session["rieltor"] = True
+        else:
+            session["rieltor"] = False
         return redirect('/index')
     return render_template('login.html', title='Авторизация', form=form)
+
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    global user_status
+    user_status = False
+    return redirect('/index')
 
 
 # http://127.0.0.1:8080/
@@ -252,58 +277,51 @@ def registration():
 @app.route('/news')
 def news():
     if user_status:
-        news_list = user_model.get_all()
-        for i in news_list:
-            print(i)
-        return render_template('index.html', news=news_list)
+        post_list = post_model.get_all()
+        return render_template('index.html', posts=post_list)
+    else:
+        return redirect('/login')
+
+@app.route('/post/<int:post_id>', methods=['GET'])
+def view_post(post_id):
+    if user_status:
+
+        post= post_model.get(post_id)
+        post_model.add_view(post_id)
+        return render_template('post.html', post=post)
     else:
         return redirect('/login')
 
 
 @app.route('/add_post', methods=['GET', 'POST'])
-def add_news():
-    if not user_status:
-        return redirect('/login')
-    form = AddPost()
-    if form.validate_on_submit():
-        title = form.title.data
-        content = form.content.data
-        type_post = form.type_post.data
-        rooms = form.rooms.data
-        floor = form.floor.data
-        address = form.address.data
-        cost = form.cost.data
-        image= ""
-        views = 0
-        post_model.insert(title, content, str(user_id),image, cost, rooms,floor, type_post, address, views)
-        return redirect("/index")
-    return render_template('add_post.html', title='Добавление новости', form=form, username=user_id)
-
-@app.route('/add_news', methods=['GET', 'POST'])
 def add_post():
     if not user_status:
         return redirect('/login')
-    form = AddNewsForm()
+    form = AddPost()
+    print(form.validate_on_submit())
     if form.validate_on_submit():
+        print(2)
         title = form.title.data
         content = form.content.data
         type_post = form.type_post.data
         rooms = form.rooms.data
         floor = form.floor.data
         address = form.address.data
+        contact = form.contact.data
         cost = form.cost.data
-        image = ""
+        image= ""
         views = 0
-        post_model.insert(title, content, str(user_id), image, cost, rooms, floor, type_post, address, views)
+        post_model.insert(title, content, str(user_id),image, cost, rooms,floor, type_post, address, contact, views)
         return redirect("/index")
-    return render_template('add_news.html', title='Добавление новости', form=form, username=user_id)
+    return render_template('add_post.html', title='Добавление новости', form=form, username=user_id)
 
 
-@app.route('/delete_news/<int:news_id>', methods=['GET'])
-def delete_post(news_id):
+
+@app.route('/delete/<int:post_id>', methods=['GET'])
+def delete_post(post_id):
     if not user_status:
         return redirect('/login')
-        post_model.delete(news_id)
+    post_model.delete(post_id)
     return redirect("/index")
 
 

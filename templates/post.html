@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+ <p><a href="/index">Back</a></p>
+   <h1>Просмотр объявления</h1>
+    <h2>Название :{{post[1]}}</h2>
+    <p>Описание :{{post[2]}}</p>
+    <p>Цена :{{post[3]}}</p>
+    <p>Тип :{{post[4]}}</p>
+    <p>Количество комнат :{{post[5]}}</p>
+    <p>Этаж :{{post[6]}}</p>
+    <p>Адрес :{{post[7]}}</p>
+    <p>Номер телефона :{{post[8]}}</p>
+    <p>views:{{post[11]}}</p>
+
+{% if "rieltor"  %}
+    <p><a href="/delete/{{post[0]}}">Delete</a></p>
+          {% endif %}
+    </div>
+{% endblock %}
