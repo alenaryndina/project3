@@ -127,15 +127,20 @@ class PostModel:
 
     def insert(self, title, content, user_id,image,cost,rooms,floor,type_post,address,contact, views):
         cursor = self.connection.cursor()
+        fname,ffile = image
+        print(fname,ffile)
+        f = open("static/img/"+fname.filename,"wb")
+        f.write(ffile)
+        f.close()
         cursor.execute('''INSERT INTO posts 
                             (title, content, user_id,image,cost,rooms,floor,type_post,address,contact,views) 
-                            VALUES (?,?,?,?,?,?,?,?,?,?,?)''', (title, content, str(user_id),image, cost, rooms,floor, type_post, address,contact, views))
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?)''', (title, content, str(user_id),"img/"+fname.filename, cost, rooms,floor, type_post, address,contact, views))
         cursor.close()
         self.connection.commit()
 
     def get(self, posts_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM posts WHERE id = ?", (str(posts_id)))
+        cursor.execute("SELECT * FROM posts WHERE id = "+ (str(posts_id)))
         row = cursor.fetchone()
         return row
 
@@ -171,7 +176,7 @@ post_model.init_table()
 
 from flask import Flask, redirect, render_template, session
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, RadioField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, RadioField, FileField
 from wtforms.validators import DataRequired, EqualTo
 
 
@@ -198,21 +203,12 @@ class AddPost(FlaskForm):
     type_post = RadioField('Категория', choices=[('0', 'Дом'), ('1', 'Квартира')])
     rooms = TextAreaField('Количество комнат ', validators=[DataRequired()])
     floor = TextAreaField('Этаж', validators=[DataRequired()])
+    image = FileField("Image")
     address = TextAreaField('Адрес ', validators=[DataRequired()])
     contact = TextAreaField('Номер телефона ', validators=[DataRequired()])
     cost = TextAreaField('Цена ', validators=[DataRequired()])
     submit = SubmitField('Добавить')
 
-
-class PostForm(FlaskForm):
-    login = StringField('Логин', validators=[DataRequired()])
-    password = PasswordField('Пароль', validators=[DataRequired()])
-
-    password2 = PasswordField('Повторить пароль', validators=[DataRequired()])
-    fname = StringField('Фамилия', validators=[DataRequired()])
-    name = StringField('Имя', validators=[DataRequired()])
-    rieltor = RadioField('Категория', choices=[('1', 'Риелтор'), ('0', 'Покупатель')])
-    submit = SubmitField('Войти')
 
 
 class AddNewsForm(FlaskForm):
@@ -221,7 +217,7 @@ class AddNewsForm(FlaskForm):
     submit = SubmitField('Добавить')
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 user_id = None
@@ -278,7 +274,11 @@ def registration():
 def news():
     if user_status:
         post_list = post_model.get_all()
-        return render_template('index.html', posts=post_list)
+        if session["rieltor"]:
+            return render_template('index.html', posts=post_list)
+        else:
+            return render_template('index0.html', posts=post_list)
+
     else:
         return redirect('/login')
 
@@ -288,7 +288,11 @@ def view_post(post_id):
 
         post= post_model.get(post_id)
         post_model.add_view(post_id)
-        return render_template('post.html', post=post)
+        if session["rieltor"]:
+            return render_template('post.html', post=post)
+        else:
+            return render_template('post0.html', post=post)
+
     else:
         return redirect('/login')
 
@@ -309,7 +313,8 @@ def add_post():
         address = form.address.data
         contact = form.contact.data
         cost = form.cost.data
-        image= ""
+        image=  (form.image.data, form.image.data.read())
+
         views = 0
         post_model.insert(title, content, str(user_id),image, cost, rooms,floor, type_post, address, contact, views)
         return redirect("/index")
