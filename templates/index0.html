@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if "rieltor"  %}
+          {% endif %}
+    {% for item in posts %}
+    <div class="alert alert-dark" role="alert">
+        <h2>{{item[1]}}</h2>
+        <p>{{item[2]}}</p>
+        <a href="/post/{{item[0]}}">Подробнее</a>
+    </div>
+{% endfor %}
+{% endblock %}

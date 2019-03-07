@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Авторизация</h1>
+   <div style="background:#ffffff; width: 25%;" > <h1 >Авторизация</h1>
+
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <p>
@@ -26,4 +27,5 @@
         <p>{{ form.submit() }}</p>
     </form>
 <a href="registration">Зарегистрироваться</a>
+    </div>
 {% endblock %}

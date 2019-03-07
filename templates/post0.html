@@ -4,8 +4,6 @@
  <p><a href="/index">Back</a></p>
    <h1>Просмотр объявления</h1>
     <h2>Название :{{post[1]}}</h2>
-   <img src="http://127.0.0.1:8080{{url_for('static',filename=''+post[4])}}" alt="text">
-
     <p>Описание :{{post[2]}}</p>
     <p>Цена :{{post[5]}}</p>
     <p>Тип :
@@ -20,10 +18,8 @@
     <p>Этаж :{{post[7]}}</p>
     <p>Адрес :{{post[9]}}</p>
     <p>Номер телефона :{{post[10]}}</p>
-    <p>Просмотры:{{post[11]}}</p>
+    <p>views:{{post[11]}}</p>
 
-{% if "rieltor" in session  %}
-    <p><a href="/delete/{{post[0]}}">Delete</a></p>
-          {% endif %}
+ 
     </div>
 {% endblock %} 
