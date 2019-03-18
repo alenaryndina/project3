@@ -57,47 +57,37 @@ class UserModel:
         return (True, row[0]) if row else (False, None)
 
 
-class NewsModel:
+class FavoriteModel:
     def __init__(self, connection):
         self.connection = connection
 
     def init_table(self):
         cursor = self.connection.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS news 
-                                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                                   title VARCHAR(100),
-                                   content VARCHAR(1000),
-                                   user_id INTEGER
+        cursor.execute('''CREATE TABLE IF NOT EXISTS favorites 
+                                  (id INTEGER PRIMARY KEY AUTOINCREMENT,  
+                                   user_id INTEGER,
+                                   post_id INTEGER
                                    )''')
         cursor.close()
         self.connection.commit()
 
-    def insert(self, title, content, user_id):
+    def insert(self, user_id, post_id):
         cursor = self.connection.cursor()
-        cursor.execute('''INSERT INTO news 
-                            (title, content, user_id) 
-                            VALUES (?,?,?)''', (title, content, str(user_id)))
+        cursor.execute('''INSERT INTO favorites 
+                            ( user_id, post_id) 
+                            VALUES (?,?)''', (str(user_id), str(post_id)))
         cursor.close()
         self.connection.commit()
 
-    def get(self, news_id):
+    def get_all(self, user_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM news WHERE id = "+ (str(news_id)))
-        row = cursor.fetchone()
-        return row
-
-    def get_all(self, user_id=None):
-        cursor = self.connection.cursor()
-        if user_id:
-            cursor.execute("SELECT * FROM news WHERE user_id = " + (str(user_id)) + " ORDER BY id DESC")
-        else:
-            cursor.execute("SELECT * FROM news")
+        cursor.execute("SELECT * FROM posts WHERE id in (select post_id from favorites where user_id = " + (str(user_id)) + ")")
         rows = cursor.fetchall()
         return rows
 
-    def delete(self, news_id):
+    def delete(self, user_id, post_id):
         cursor = self.connection.cursor()
-        cursor.execute('''DELETE FROM news WHERE id = ''' + str(news_id))
+        cursor.execute('''DELETE FROM favorites WHERE post_id = ''' + str(post_id)+''' and user_id = ''' + str(user_id))
         cursor.close()
         self.connection.commit()
 
@@ -171,8 +161,10 @@ class PostModel:
 db = DB()
 user_model = UserModel(db.get_connection())
 post_model = PostModel(db.get_connection())
+fav_model = FavoriteModel(db.get_connection())
 user_model.init_table()
 post_model.init_table()
+fav_model.init_table()
 
 from flask import Flask, redirect, render_template, session
 from flask_wtf import FlaskForm
@@ -282,6 +274,16 @@ def news():
     else:
         return redirect('/login')
 
+
+@app.route('/fav')
+def fav():
+    if user_status:
+        post_list = fav_model.get_all(user_id)
+        return render_template('fav.html', posts=post_list)
+
+    else:
+        return redirect('/login')
+
 @app.route('/post/<int:post_id>', methods=['GET'])
 def view_post(post_id):
     if user_status:
@@ -327,6 +329,20 @@ def delete_post(post_id):
     if not user_status:
         return redirect('/login')
     post_model.delete(post_id)
+    return redirect("/index")
+
+@app.route('/add_fav/<int:post_id>', methods=['GET'])
+def addfav(post_id):
+    if not user_status:
+        return redirect('/login')
+    fav_model.insert(user_id,post_id)
+    return redirect("/index")
+
+@app.route('/del_fav/<int:fav_id>', methods=['GET'])
+def delfav(fav_id):
+    if not user_status:
+        return redirect('/login')
+    fav_model.delete(user_id, fav_id)
     return redirect("/index")
 
 
