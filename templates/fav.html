@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 
-{% block content %}
- <h2><a href="/fav">Избранное</a></h2>
-{% if "rieltor"  %}
-   <a href="/add_post">Добавить объявление</a>
-          {% endif %}
+{% block content %} 
     {% for item in posts %}
     <div class="alert alert-dark" role="alert">
         <h2>{{item[1]}}</h2>
         <p>{{item[2]}}</p>
         <a href="/post/{{item[0]}}">Подробнее</a>
-        <a href="/add_fav/{{item[0]}}">в избранное</a>
+        <a href="/del_fav/{{item[0]}}">delete from fav</a>
     </div>
 {% endfor %}
 {% endblock %}

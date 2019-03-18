@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+ <h2><a href="/fav">Favorite</a></h2>
 {% if "rieltor"  %}
           {% endif %}
     {% for item in posts %}
@@ -8,6 +9,7 @@
         <h2>{{item[1]}}</h2>
         <p>{{item[2]}}</p>
         <a href="/post/{{item[0]}}">Подробнее</a>
+        <a href="/add_fav/{{item[0]}}">in favorite</a>
     </div>
 {% endfor %}
 {% endblock %}
